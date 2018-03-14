@@ -1,8 +1,10 @@
 package com.skv.telegram.handler;
 
+import com.skv.telegram.api.BotRequestMapping;
 import org.telegram.telegrambots.api.objects.Update;
 
 public class BotRequestDispatcher {
+
     private static BotApiMethodContainer container = BotApiMethodContainer.getInstanse();
 
     public static BotApiMethodController getHandle(Update update) {
@@ -19,6 +21,6 @@ public class BotRequestDispatcher {
             controller = container.getBotApiMethodController(path);
         }
 
-        return controller != null ? controller : null/*new FakeBotApiMethodController()*/;
+        return controller != null ? controller : container.getBotApiMethodController(BotRequestMapping.WRONG_MESSAGE);
     }
 }

@@ -17,16 +17,16 @@ import java.util.Map;
 
 @Component
 public class TelegramUpdateHandlerBeanPostProcessor implements BeanPostProcessor, Ordered {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TelegramUpdateHandlerBeanPostProcessor.class);
+    private static final Logger logger = LoggerFactory.getLogger(TelegramUpdateHandlerBeanPostProcessor.class);
 
     private BotApiMethodContainer container = BotApiMethodContainer.getInstanse();
-    private Map<String, Class> botControllerMap = new HashMap<>();
+    private Map<String, Object> botControllerMap = new HashMap<>();
 
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
         Class<?> beanClass = bean.getClass();
         if (beanClass.isAnnotationPresent(BotController.class))
-            botControllerMap.put(beanName, beanClass);
+            botControllerMap.put(beanName, bean);
         return bean;
     }
 

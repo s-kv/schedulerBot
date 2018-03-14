@@ -28,7 +28,8 @@ public abstract class BotApiMethodController {
     public abstract boolean successUpdatePredicate(Update update);
 
     public List<BotApiMethod> process(Update update) {
-        if(!successUpdatePredicate(update)) return null;
+        if (!successUpdatePredicate(update))
+            return null;
 
         try {
             return processUpdate.accept(update);

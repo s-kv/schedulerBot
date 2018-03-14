@@ -7,7 +7,9 @@ import java.lang.annotation.*;
 @Documented
 public @interface BotRequestMapping {
 
+    String WRONG_MESSAGE = "/wrongMessage";
+
     String[] value() default {};
 
-    BotRequestMethod[] messageType() default {BotRequestMethod.COMMAND};
+    BotRequestMethod[] messageType() default {BotRequestMethod.MESSAGE};
 }

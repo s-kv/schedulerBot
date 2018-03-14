@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-class BotApiMethodContainer {
+public class BotApiMethodContainer {
     private static final Logger LOGGER = LoggerFactory.getLogger(BotApiMethodContainer.class);
 
     private Map<String, BotApiMethodController> controllerMap;
@@ -16,7 +16,7 @@ class BotApiMethodContainer {
     }
 
     public void addBotController(String path, BotApiMethodController controller) {
-        if(controllerMap.containsKey(path))
+        if (controllerMap.containsKey(path))
             throw new BotApiMethodContainerException("path " + path + " already add");
         LOGGER.trace("add telegram bot controller for path: " +  path);
         controllerMap.put(path, controller);
