@@ -1,12 +1,17 @@
 package com.skv.schedulerBot;
 
+import com.skv.schedulerBot.fileHandler.FileHandler;
 import com.skv.telegram.api.BotController;
 import com.skv.telegram.api.BotRequestMapping;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Update;
 
 @BotController
 public class SchedulerBot {
+
+    @Autowired
+    FileHandler schedulerXlsHandler;
 
     @BotRequestMapping(value = "/ok")
     public SendMessage ok(Update update) {
