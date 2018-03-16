@@ -14,11 +14,15 @@ public class BotRequestDispatcher {
         if (update.hasMessage() && update.getMessage().hasText()) {
             path = update.getMessage().getText().split(" ")[0].trim();
             controller = container.getBotApiMethodController(path);
-            if (controller == null) controller = container.getBotApiMethodController("");
-
+            if (controller == null)
+                controller = container.getBotApiMethodController("");
         } else if (update.hasCallbackQuery()) {
             path = update.getCallbackQuery().getData().split("/")[1].trim();
             controller = container.getBotApiMethodController(path);
+        } else if (update.hasMessage() && update.getMessage().hasDocument()) {
+            String fileName = update.getMessage().getDocument().getFileName();
+            if (fileName != null)
+                controller = container.getBotApiMethodController(fileName.substring(fileName.indexOf('.', -1)));
         }
 
         return controller != null ? controller : container.getBotApiMethodController(BotRequestMapping.WRONG_MESSAGE);

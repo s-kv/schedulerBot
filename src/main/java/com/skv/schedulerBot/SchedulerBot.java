@@ -1,29 +1,24 @@
 package com.skv.schedulerBot;
 
-import com.skv.schedulerBot.fileHandler.FileHandler;
-import com.skv.telegram.api.BotController;
-import com.skv.telegram.api.BotRequestMapping;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.telegram.telegrambots.api.methods.send.SendMessage;
-import org.telegram.telegrambots.api.objects.Update;
+import com.skv.telegram.TelegramBot;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-@BotController
-public class SchedulerBot {
+@Component
+public class SchedulerBot extends TelegramBot {
+    @Value("${botUsername}")
+    private String botUsername;
 
-    @Autowired
-    FileHandler schedulerXlsHandler;
+    @Value("${botToken}")
+    private String botToken;
 
-    @BotRequestMapping(value = "/ok")
-    public SendMessage ok(Update update) {
-        return new SendMessage()
-                .setChatId(update.getMessage().getChatId())
-                .setText("okay bro, okay!");
+    @Override
+    public String getBotUsername() {
+        return botUsername;
     }
 
-    @BotRequestMapping(value = BotRequestMapping.WRONG_MESSAGE)
-    public SendMessage wrongMessage(Update update) {
-        return new SendMessage()
-                .setChatId(update.getMessage().getChatId())
-                .setText("The message is wrong");
+    @Override
+    public String getBotToken() {
+        return botToken;
     }
 }

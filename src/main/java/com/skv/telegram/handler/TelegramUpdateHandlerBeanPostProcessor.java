@@ -53,10 +53,13 @@ public class TelegramUpdateHandlerBeanPostProcessor implements BeanPostProcessor
 
         switch (botRequestMapping.messageType()[0]){
             case MESSAGE:
-                controller = createControllerUpdate2ApiMethod(bean, method);
+                controller = createMessageController(bean, method);
                 break;
             case COMMAND:
-                controller = createProcessListForController(bean, method);
+                controller = createCommandController(bean, method);
+                break;
+            case FILE:
+                controller = createFileController(bean, method);
                 break;
             default:
                 break;
@@ -67,7 +70,7 @@ public class TelegramUpdateHandlerBeanPostProcessor implements BeanPostProcessor
         }
     }
 
-    private BotApiMethodController createControllerUpdate2ApiMethod(Object bean, Method method){
+    private BotApiMethodController createMessageController(Object bean, Method method){
         return new BotApiMethodController(bean, method) {
             @Override
             public boolean successUpdatePredicate(Update update) {
@@ -76,11 +79,20 @@ public class TelegramUpdateHandlerBeanPostProcessor implements BeanPostProcessor
         };
     }
 
-    private BotApiMethodController createProcessListForController(Object bean, Method method){
+    private BotApiMethodController createCommandController(Object bean, Method method){
         return new BotApiMethodController(bean, method) {
             @Override
             public boolean successUpdatePredicate(Update update) {
                 return update != null && update.hasCallbackQuery() && update.getCallbackQuery().getData() != null;
+            }
+        };
+    }
+
+    private BotApiMethodController createFileController(Object bean, Method method) {
+        return new BotApiMethodController(bean, method) {
+            @Override
+            public boolean successUpdatePredicate(Update update) {
+                return update != null && update.hasMessage() && update.getMessage().hasDocument();
             }
         };
     }
