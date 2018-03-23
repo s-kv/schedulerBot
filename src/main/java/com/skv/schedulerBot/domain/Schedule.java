@@ -15,9 +15,14 @@ public class Schedule {
     private LocalDate date;
     private LocalTime startTime;
     private LocalTime endTime;
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne
     @JoinColumn(name = "worker_id")
     private Worker worker;
+
+    public Schedule(Worker worker, LocalDate date) {
+        this.worker = worker;
+        this.date = date;
+    }
 
     public LocalDate getDate() {
         return date;

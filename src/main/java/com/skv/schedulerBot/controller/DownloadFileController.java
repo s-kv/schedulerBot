@@ -75,7 +75,6 @@ public class DownloadFileController{
 
     @Transactional(propagation = Propagation.REQUIRED)
     private void parseXls(java.io.File xlsx) throws IOException {
-        String result = "";
         InputStream inputStream = null;
         XSSFWorkbook workBook = null;
 
@@ -149,21 +148,18 @@ public class DownloadFileController{
                             if (!row.get(i+1).replace("-", "").trim().equals(""))
                                 endTime = LocalTime.parse(row.get(i+1).replace("-", "").trim(), timeFormatter);
                         } catch (DateTimeParseException e) {
-                            //e.printStackTrace();
                             logger.info("Ошибка при разборе формата времени (пользователь = " + fullName
-                                    + ", дата = " + dateFormatter.format(date));
+                                    + ", дата = " + dateFormatter.format(date) + ")");
                         }
 
                         Schedule sch = worker.getSchedule().stream().filter(o -> o.getDate() == date)
-                                .findFirst().orElse(new Schedule());
+                                .findFirst().orElse(new Schedule(worker, date));
 
-                        sch.setDate(date);
                         sch.setStartTime(startTime);
                         sch.setEndTime(endTime);
 
                         worker.getSchedule().add(sch);
                     } catch (DateTimeParseException e) {
-                        //e.printStackTrace();
                         logger.info("Ошибка при разборе формата даты (пользователь = " + fullName + ")");
                     }
                 }
@@ -171,51 +167,5 @@ public class DownloadFileController{
                 workerRepository.save(worker);
             }
         }
-
-//        // находим или создаём пользователей
-//        Iterator<Cell> nameCells =  it.next().iterator();
-//
-//        int count = 0;
-//
-//        while (nameCells.hasNext()) {
-//            count++;
-//            Cell cell = nameCells.next();
-//            if (count > 3) {
-//                String fullName = cell.getStringCellValue();
-//                Worker worker = workerRepository.findByFullname(fullName);
-//                if (worker == null) {
-//                    worker = new Worker();
-//                    worker.setFullName(fullName);
-//                }
-//            }
-//        }
-
-//        //проходим по всему листу
-//        while (it.hasNext()) {
-//            Row row = it.next();
-//            Iterator<Cell> cells = row.iterator();
-//            while (cells.hasNext()) {
-//                Cell cell = cells.next();
-//                int cellType = cell.getCellType();
-//                //перебираем возможные типы ячеек
-//                switch (cellType) {
-//                    case Cell.CELL_TYPE_STRING:
-//                        result += cell.getStringCellValue() + "=";
-//                        break;
-//                    case Cell.CELL_TYPE_NUMERIC:
-//                        result += "[" + cell.getNumericCellValue() + "]";
-//                        break;
-//
-//                    case Cell.CELL_TYPE_FORMULA:
-//                        result += "[" + cell.getNumericCellValue() + "]";
-//                        break;
-//                    default:
-//                        result += "|";
-//                        break;
-//                }
-//            }
-//            result += "\n";
-//        }
-        logger.info(result);
     }
 }
