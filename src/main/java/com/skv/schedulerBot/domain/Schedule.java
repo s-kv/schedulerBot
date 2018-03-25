@@ -19,6 +19,8 @@ public class Schedule {
     @JoinColumn(name = "worker_id")
     private Worker worker;
 
+    public Schedule() {}
+
     public Schedule(Worker worker, LocalDate date) {
         this.worker = worker;
         this.date = date;

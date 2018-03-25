@@ -63,18 +63,22 @@ public class DownloadFileController{
             String fileId = update.getMessage().getDocument().getFileId();
 
             File file = schedulerBot.execute(new GetFile().setFileId(fileId));
-            parseXls(schedulerBot.downloadFile(file));
+            List<String> warnings = parseXls(schedulerBot.downloadFile(file));
 
-            response.setText("File processed");
+            if (warnings.size() > 0)
+                response.setText("Расписание загружено c предупреждениями:\n" + String.join("\n", warnings));
+            else
+                response.setText("Расписание загружено");
         } catch (IOException | TelegramApiException e) {
-            response.setText("File processed with exception: " + e.getMessage());
+            response.setText("Ошибка при загрузке расписания: " + e.getMessage());
             e.printStackTrace();
         }
         return response;
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    private void parseXls(java.io.File xlsx) throws IOException {
+    private List<String> parseXls(java.io.File xlsx) throws IOException {
+        List<String> warnings = new ArrayList<>();
         InputStream inputStream = null;
         XSSFWorkbook workBook = null;
 
@@ -143,16 +147,18 @@ public class DownloadFileController{
                         LocalTime startTime = null;
                         LocalTime endTime = null;
                         try {
-                            if (!row.get(i).replace("-", "").trim().equals(""))
+                            if (!row.get(i).replaceAll("[-OО]", "").trim().equals(""))
                                 startTime = LocalTime.parse(row.get(i).replace("-", "").trim(), timeFormatter);
-                            if (!row.get(i+1).replace("-", "").trim().equals(""))
+                            if (!row.get(i+1).replaceAll("[-OО]", "").trim().equals(""))
                                 endTime = LocalTime.parse(row.get(i+1).replace("-", "").trim(), timeFormatter);
                         } catch (DateTimeParseException e) {
-                            logger.info("Ошибка при разборе формата времени (пользователь = " + fullName
-                                    + ", дата = " + dateFormatter.format(date) + ")");
+                            String warning = "Ошибка при разборе формата времени (пользователь = " + fullName
+                                    + ", дата = " + dateFormatter.format(date) + ")";
+                            logger.info(warning);
+                            warnings.add(warning);
                         }
 
-                        Schedule sch = worker.getSchedule().stream().filter(o -> o.getDate() == date)
+                        Schedule sch = worker.getSchedule().stream().filter(o -> o.getDate().equals(date))
                                 .findFirst().orElse(new Schedule(worker, date));
 
                         sch.setStartTime(startTime);
@@ -160,12 +166,16 @@ public class DownloadFileController{
 
                         worker.getSchedule().add(sch);
                     } catch (DateTimeParseException e) {
-                        logger.info("Ошибка при разборе формата даты (пользователь = " + fullName + ")");
+                        String warning = "Ошибка при разборе формата даты (пользователь = " + fullName + ")";
+                        logger.info(warning);
+                        warnings.add(warning);
                     }
                 }
 
                 workerRepository.save(worker);
             }
         }
+
+        return warnings;
     }
 }

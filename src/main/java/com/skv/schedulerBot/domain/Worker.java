@@ -4,9 +4,7 @@ import org.springframework.lang.Nullable;
 
 import javax.persistence.*;
 import javax.validation.constraints.Size;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 @Entity
 @Table(uniqueConstraints = {
@@ -21,8 +19,8 @@ public class Worker {
     @Column(nullable = true)
     private long chatId;
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "worker", cascade = CascadeType.ALL)
-    @OrderBy("startDate ASC")
-    private List<Schedule> schedule;
+    @OrderBy("date ASC")
+    private Set<Schedule> schedule;
 
     public String getFullName() {
         return fullName;
@@ -32,13 +30,13 @@ public class Worker {
         this.fullName = fullName;
     }
 
-    public Collection<Schedule> getSchedule() {
+    public Set<Schedule> getSchedule() {
         if (schedule == null)
-            schedule = new ArrayList<>();
+            schedule = new HashSet<>();
         return schedule;
     }
 
-    public void setSchedule(List<Schedule> schedule) {
+    public void setSchedule(Set<Schedule> schedule) {
         this.schedule = schedule;
     }
 
