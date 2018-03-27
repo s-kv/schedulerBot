@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface WorkerRepository extends JpaRepository<Worker, String> {
+public interface WorkerRepository extends JpaRepository<Worker, Long> {
     Worker findByFullName(String fullName);
+    Worker findByChatId(Long chatId);
 }

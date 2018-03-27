@@ -17,7 +17,7 @@ public class BotRequestDispatcher {
             if (controller == null)
                 controller = container.getBotApiMethodController("");
         } else if (update.hasCallbackQuery()) {
-            path = update.getCallbackQuery().getData().split("/")[1].trim();
+            path = update.getCallbackQuery().getData().split("/")[0].trim();
             controller = container.getBotApiMethodController(path);
         } else if (update.hasMessage() && update.getMessage().hasDocument()) {
             String fileName = update.getMessage().getDocument().getFileName();

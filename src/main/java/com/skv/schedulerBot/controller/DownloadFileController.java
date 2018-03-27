@@ -17,7 +17,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.api.methods.GetFile;
@@ -35,15 +35,13 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @BotController
 public class DownloadFileController{
     private static final Logger logger = LoggerFactory.getLogger(DownloadFileController.class);
-    public static final String DD_MM_YYYY = "dd.MM.yyyy";
-    public static final String HH_MM = "HH:mm";
 
     @Autowired
     TelegramBot schedulerBot;
@@ -55,7 +53,7 @@ public class DownloadFileController{
     ScheduleRepository scheduleRepository;
 
     @BotRequestMapping(value = ".xlsx", messageType = BotRequestMethod.FILE)
-    public SendMessage loadSchedule(Update update) {
+    public List<SendMessage> loadSchedule(Update update) {
         SendMessage response = new SendMessage()
                 .setChatId(update.getMessage().getChatId());
 
@@ -73,7 +71,25 @@ public class DownloadFileController{
             response.setText("Ошибка при загрузке расписания: " + e.getMessage());
             e.printStackTrace();
         }
-        return response;
+
+        List<SendMessage> responseList = alertWorkers();
+        responseList.add(response);
+
+        return responseList;
+    }
+
+    public List<SendMessage> alertWorkers() {
+        List<SendMessage> alertList = new ArrayList<>();
+        List<Worker> workerList = workerRepository.findAll();
+
+        alertList.addAll(
+                workerList.stream()
+                        .filter(wrk -> wrk.getChatId() > 0)
+                        .collect(Collectors.toList()).stream()
+                        .map(w -> new SendMessage().setChatId(w.getChatId()).setText("Внимание! Расписание изменено!"))
+                        .collect(Collectors.toList()));
+
+        return alertList;
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -110,9 +126,9 @@ public class DownloadFileController{
                 else if (cell.getCellTypeEnum() == CellType.NUMERIC || cell.getCellTypeEnum() == CellType.FORMULA)
                     if (HSSFDateUtil.isCellDateFormatted(cell)) {
                         if (i == 1)
-                            list.add(new SimpleDateFormat(DD_MM_YYYY).format(cell.getDateCellValue()));
+                            list.add(new SimpleDateFormat(Schedule.DD_MM_YYYY).format(cell.getDateCellValue()));
                         else
-                            list.add(new SimpleDateFormat(HH_MM).format(cell.getDateCellValue()));
+                            list.add(new SimpleDateFormat(Schedule.HH_MM).format(cell.getDateCellValue()));
                     } else
                         list.add(String.valueOf(cell.getNumericCellValue()));
                 else
@@ -140,10 +156,10 @@ public class DownloadFileController{
                     List<String> row = xlsData.get(j);
 
                     try {
-                        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(DD_MM_YYYY);
+                        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(Schedule.DD_MM_YYYY);
                         LocalDate date = LocalDate.parse(row.get(1).trim(), dateFormatter);
 
-                        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern(HH_MM);
+                        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern(Schedule.HH_MM);
                         LocalTime startTime = null;
                         LocalTime endTime = null;
                         try {

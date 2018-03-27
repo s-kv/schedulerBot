@@ -8,6 +8,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ScheduleRepository extends JpaRepository<Schedule, String> {
+public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     List<Schedule> findByWorker(Worker worker);
 }
