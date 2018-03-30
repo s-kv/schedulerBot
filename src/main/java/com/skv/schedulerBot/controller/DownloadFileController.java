@@ -104,91 +104,102 @@ public class DownloadFileController{
         } catch (IOException e) {
             e.printStackTrace();
         }
-        //разбираем первый лист входного файла на объектную модель
-        XSSFSheet sheet = workBook.getSheetAt(0);
-        Iterator<Row> it = sheet.iterator();
 
-        List<List<String>> xlsData = new ArrayList<>();
+        //разбираем все листы входного файла на объектную модель
+        for (int s = 0; s < 4; s++) {
+            XSSFSheet sheet = workBook.getSheetAt(s);
+            Iterator<Row> it = sheet.iterator();
 
-        //проходим по всему листу
-        while (it.hasNext()) {
-            Row row = it.next();
-            Iterator<Cell> cells = row.iterator();
+            List<List<String>> xlsData = new ArrayList<>();
 
-            List<String> list = new ArrayList<>();
-            int i = 0;
+            //проходим по всему листу
+            while (it.hasNext()) {
+                Row row = it.next();
+                Iterator<Cell> cells = row.iterator();
 
-            while (cells.hasNext()) {
-                Cell cell = cells.next();
+                List<String> list = new ArrayList<>();
+                int i = 0;
 
-                if (cell.getCellTypeEnum() == CellType.STRING)
-                    list.add(cell.getStringCellValue());
-                else if (cell.getCellTypeEnum() == CellType.NUMERIC || cell.getCellTypeEnum() == CellType.FORMULA)
-                    if (HSSFDateUtil.isCellDateFormatted(cell)) {
-                        if (i == 1)
-                            list.add(new SimpleDateFormat(Schedule.DD_MM_YYYY).format(cell.getDateCellValue()));
-                        else
-                            list.add(new SimpleDateFormat(Schedule.HH_MM).format(cell.getDateCellValue()));
-                    } else
-                        list.add(String.valueOf(cell.getNumericCellValue()));
-                else
-                    list.add("");
+                while (cells.hasNext()) {
+                    Cell cell = cells.next();
 
-                i++;
+                    if (cell.getCellTypeEnum() == CellType.STRING)
+                        list.add(cell.getStringCellValue());
+                    else if (cell.getCellTypeEnum() == CellType.NUMERIC || cell.getCellTypeEnum() == CellType.FORMULA)
+                        if (HSSFDateUtil.isCellDateFormatted(cell)) {
+                            if (i == 1)
+                                list.add(new SimpleDateFormat(Schedule.DD_MM_YYYY).format(cell.getDateCellValue()));
+                            else
+                                list.add(new SimpleDateFormat(Schedule.HH_MM).format(cell.getDateCellValue()));
+                        } else
+                            list.add(String.valueOf(cell.getNumericCellValue()));
+                    else
+                        list.add("");
+
+                    i++;
+                }
+
+                xlsData.add(list);
             }
 
-            xlsData.add(list);
-        }
+            List<String> fullNames = xlsData.get(0);
 
-        List<String> fullNames = xlsData.get(0);
+            for (int i = 0; i < fullNames.size(); i++) {
+                String fullName = fullNames.get(i);
+                if (i > 2 && !fullName.equals("")) {
+                    Worker worker = workerRepository.findByFullName(fullName);
 
-        for (int i = 0; i < fullNames.size(); i++) {
-            String fullName = fullNames.get(i);
-            if (i > 2 && !fullName.equals("")) {
-                Worker worker = workerRepository.findByFullName(fullName);
+                    if (worker == null) {
+                        worker = new Worker();
+                        worker.setFullName(fullName);
+                    }
 
-                if (worker == null) {
-                    worker = new Worker();
-                    worker.setFullName(fullName);
-                }
+                    for (int j = 2; j < xlsData.size(); j++) {
+                        List<String> row = xlsData.get(j);
 
-                for (int j = 2; j < xlsData.size(); j ++) {
-                    List<String> row = xlsData.get(j);
+                        if (row.size() < 2)
+                            continue;
 
-                    try {
-                        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(Schedule.DD_MM_YYYY);
-                        LocalDate date = LocalDate.parse(row.get(1).trim(), dateFormatter);
-
-                        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern(Schedule.HH_MM);
-                        LocalTime startTime = null;
-                        LocalTime endTime = null;
                         try {
-                            if (!row.get(i).replaceAll("[-OО]", "").trim().equals(""))
-                                startTime = LocalTime.parse(row.get(i).replace("-", "").trim(), timeFormatter);
-                            if (!row.get(i+1).replaceAll("[-OО]", "").trim().equals(""))
-                                endTime = LocalTime.parse(row.get(i+1).replace("-", "").trim(), timeFormatter);
+                            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(Schedule.DD_MM_YYYY);
+                            LocalDate date = LocalDate.parse(row.get(1).trim(), dateFormatter);
+
+                            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern(Schedule.HH_MM);
+                            LocalTime startTime = null;
+                            LocalTime endTime = null;
+                            try {
+                                if (!row.get(i).replaceAll("[-OО]", "").trim().equals(""))
+                                    startTime = LocalTime.parse(row.get(i).replace("-", "").trim(), timeFormatter);
+                                if (!row.get(i + 1).replaceAll("[-OО]", "").trim().equals(""))
+                                    endTime = LocalTime.parse(row.get(i + 1).replace("-", "").trim(), timeFormatter);
+                            } catch (DateTimeParseException e) {
+                                String warning = "Ошибка при разборе формата времени (пользователь = " + fullName
+                                        + ", дата = " + dateFormatter.format(date) + ")";
+                                logger.info(warning);
+                                warnings.add(warning);
+                            }
+
+                            Schedule sch = worker.getSchedule().stream().filter(o -> o.getDate().equals(date))
+                                    .findFirst().orElse(new Schedule(worker, date));
+
+                            sch.setStartTime(startTime);
+                            sch.setEndTime(endTime);
+
+                            worker.getSchedule().add(sch);
                         } catch (DateTimeParseException e) {
-                            String warning = "Ошибка при разборе формата времени (пользователь = " + fullName
-                                    + ", дата = " + dateFormatter.format(date) + ")";
+                            String warning = "Ошибка при разборе формата даты (пользователь = " + fullName + ")";
                             logger.info(warning);
                             warnings.add(warning);
+                        } catch (Exception e) {
+                            String warning = "Ошибка при разборе формата даты (пользователь = " + fullName + ")"
+                                    + " страница s = " + s + " строка j = " + j;
+                            logger.info(warning);
+                            throw e;
                         }
-
-                        Schedule sch = worker.getSchedule().stream().filter(o -> o.getDate().equals(date))
-                                .findFirst().orElse(new Schedule(worker, date));
-
-                        sch.setStartTime(startTime);
-                        sch.setEndTime(endTime);
-
-                        worker.getSchedule().add(sch);
-                    } catch (DateTimeParseException e) {
-                        String warning = "Ошибка при разборе формата даты (пользователь = " + fullName + ")";
-                        logger.info(warning);
-                        warnings.add(warning);
                     }
-                }
 
-                workerRepository.save(worker);
+                    workerRepository.save(worker);
+                }
             }
         }
 
