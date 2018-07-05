@@ -18,7 +18,7 @@ public class Worker {
     @Column(nullable = true)
     private long chatId;
     @Column
-    private boolean hidden;
+    private Boolean hidden;
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "worker", cascade = CascadeType.ALL)
     @OrderBy("date ASC")
     private Set<Schedule> schedule;
@@ -64,7 +64,7 @@ public class Worker {
     }
 
     public boolean isHidden() {
-        return hidden;
+        return hidden != null ? hidden : false;
     }
 
     public void setHidden(boolean hidden) {
