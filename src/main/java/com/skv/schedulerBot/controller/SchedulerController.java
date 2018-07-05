@@ -12,7 +12,6 @@ import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardButton;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -130,7 +129,7 @@ public class SchedulerController {
             return new SendMessage()
                     .setChatId(chatId)
                     .setText("Выберите сотрудника:")
-                    .setReplyMarkup(getWorkerKeyboard("get", w -> true));
+                    .setReplyMarkup(getWorkerKeyboard("get", w -> !w.isHidden()));
         else
             return new SendMessage()
                     .setChatId(chatId)

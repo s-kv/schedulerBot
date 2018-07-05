@@ -1,9 +1,8 @@
 package com.skv.schedulerBot.domain;
 
-import org.springframework.lang.Nullable;
-
 import javax.persistence.*;
 import javax.validation.constraints.Size;
+import java.time.LocalDate;
 import java.util.*;
 
 @Entity
@@ -18,6 +17,8 @@ public class Worker {
     private String fullName;
     @Column(nullable = true)
     private long chatId;
+    @Column
+    private boolean hidden;
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "worker", cascade = CascadeType.ALL)
     @OrderBy("date ASC")
     private Set<Schedule> schedule;
@@ -54,5 +55,19 @@ public class Worker {
 
     public void setChatId(long chatId) {
         this.chatId = chatId;
+    }
+
+    public Schedule getScheduleByDay(LocalDate date) {
+        return getSchedule().stream()
+                .filter(s -> s.getDate().equals(date))
+                .findFirst().orElse(null);
+    }
+
+    public boolean isHidden() {
+        return hidden;
+    }
+
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
     }
 }
