@@ -4,9 +4,11 @@ import com.skv.schedulerBot.domain.Schedule;
 import com.skv.schedulerBot.domain.Worker;
 import com.skv.schedulerBot.persistance.WorkerRepository;
 import com.skv.telegram.TelegramBot;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
@@ -16,8 +18,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@EnableScheduling
+@Component
 public class Alert {
+    private static final Logger logger = LoggerFactory.getLogger(Alert.class);
+
     @Autowired
     TelegramBot schedulerBot;
 
@@ -26,12 +30,14 @@ public class Alert {
 
     @Scheduled(cron="0 0 12 * * *", zone="Europe/Moscow")
     public void workDayComing() {
+        logger.info("Starting workDayComing()...");
+
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern(Schedule.HH_MM);
         List<SendMessage> alertList = new ArrayList<>();
 
         alertList.addAll(
                 workerRepository.findAll().stream()
-                        .filter(wrk -> wrk.getChatId() > 0 && newTomorrowStartTime(wrk))
+                        .filter(wrk -> wrk.getChatId() > 0 && differentTomorrowStartTime(wrk))
                         .map(w -> new SendMessage().setChatId(w.getChatId())
                                 .setText("Завтра на работу к " +
                                         w.getScheduleByDay(LocalDate.now().plusDays(1))
@@ -47,7 +53,7 @@ public class Alert {
         });
     }
 
-    private boolean newTomorrowStartTime(Worker wrk) {
+    private boolean differentTomorrowStartTime(Worker wrk) {
         Schedule today = wrk.getScheduleByDay(LocalDate.now());
         Schedule tomorrow = wrk.getScheduleByDay(LocalDate.now().plusDays(1));
 
